@@ -1,11 +1,9 @@
 # encoding: UTF-8
 
 # 系统模块
+import threading
 from Queue import Queue, Empty
 from threading import Thread
-
-# 第三方模块
-from PyQt4.QtCore import QTimer
 
 # 自己开发的模块
 from eventType import *
@@ -23,7 +21,6 @@ class EventEngine:
     __queue：私有变量，事件队列
     __active：私有变量，事件引擎开关
     __thread：私有变量，事件处理线程
-    __timer：私有变量，计时器
     __handlers：私有变量，事件处理函数字典
     
     
@@ -61,10 +58,6 @@ class EventEngine:
         # 事件处理线程
         self.__thread = Thread(target = self.__run)
         
-        # 计时器，用于触发计时器事件
-        self.__timer = QTimer()
-        self.__timer.timeout.connect(self.__onTimer)
-        
         # 这里的__handlers是一个字典，用来保存对应的事件调用关系
         # 其中每个键对应的值是一个列表，列表中保存了对该事件进行监听的函数功能
         self.__handlers = {}
@@ -84,21 +77,22 @@ class EventEngine:
         """处理事件"""
         # 检查是否存在对该事件进行监听的处理函数
         if event.type_ in self.__handlers:
+
             # 若存在，则按顺序将事件传递给处理函数执行
-            [handler(event) for handler in self.__handlers[event.type_]]
-            
-            # 以上语句为Python列表解析方式的写法，对应的常规循环写法为：
+            # 以下语句为Python列表解析方式的写法，对应的常规循环写法为：
             #for handler in self.__handlers[event.type_]:
                 #handler(event)    
-               
+            [handler(event) for handler in self.__handlers[event.type_]] 
+
     #----------------------------------------------------------------------
-    def __onTimer(self):
+    def __onTimer(self,tick):
         """向事件队列中存入计时器事件"""
         # 创建计时器事件
         event = Event(type_=EVENT_TIMER)
         
         # 向队列中存入计时器事件
-        self.put(event)    
+        self.put(event) 
+        threading.Timer(tick,self.__onTimer,args=[tick]).start();
 
     #----------------------------------------------------------------------
     def start(self):
@@ -110,7 +104,8 @@ class EventEngine:
         self.__thread.start()
         
         # 启动计时器，计时器事件间隔默认设定为1秒
-        self.__timer.start(1000)
+        tick = 1
+        threading.Timer(tick,self.__onTimer,args=[tick]).start();
     
     #----------------------------------------------------------------------
     def stop(self):
@@ -177,19 +172,14 @@ def test():
     """测试函数"""
     import sys
     from datetime import datetime
-    from PyQt4.QtCore import QCoreApplication
     
     def simpletest(event):
         print u'处理每秒触发的计时器事件：%s' % str(datetime.now())
     
-    app = QCoreApplication(sys.argv)
     
     ee = EventEngine()
     ee.register(EVENT_TIMER, simpletest)
     ee.start()
-    
-    app.exec_()
-    
     
 # 直接运行脚本可以进行测试
 if __name__ == '__main__':
