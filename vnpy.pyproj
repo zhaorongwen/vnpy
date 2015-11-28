@@ -128,7 +128,14 @@
     <Compile Include="vn.lts_old\vnltsmd\test\mdtest.py" />
     <Compile Include="vn.lts_old\vnltstd\test\lts_data_type.py" />
     <Compile Include="vn.lts_old\vnltstd\test\tdtest.py" />
+    <Compile Include="vn.myTest\eventType.py" />
+    <Compile Include="vn.myTest\MarketPrice.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="vn.myTest\MyApp.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="vn.myTest\MyEventEngine.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="vn.strategy\backtestingEngine.py" />
