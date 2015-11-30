@@ -13,16 +13,11 @@ from eventType import *
 class EventEngine:
     """
     事件驱动引擎
-
-    事件驱动引擎中所有的变量都设置为了私有，这是为了防止不小心
-    从外部修改了这些变量的值或状态，导致bug。
     
-    变量说明
     __queue：私有变量，事件队列
     __active：私有变量，事件引擎开关
     __thread：私有变量，事件处理线程
     __handlers：私有变量，事件处理函数字典
-    
     
     方法说明
     __run: 私有方法，事件处理线程连续运行用
@@ -67,6 +62,8 @@ class EventEngine:
         """引擎运行"""
         while self.__active == True:
             try:
+                print("now in thread now")
+                print(threading.current_thread())
                 event = self.__queue.get(block = True, timeout = 1)  # 获取事件的阻塞时间设为1秒
                 self.__process(event)
             except Empty:
@@ -76,23 +73,22 @@ class EventEngine:
     def __process(self, event):
         """处理事件"""
         # 检查是否存在对该事件进行监听的处理函数
-        if event.type_ in self.__handlers:
-
+        if event.eventType in self.__handlers:
             # 若存在，则按顺序将事件传递给处理函数执行
-            # 以下语句为Python列表解析方式的写法，对应的常规循环写法为：
-            #for handler in self.__handlers[event.type_]:
-                #handler(event)    
-            [handler(event) for handler in self.__handlers[event.type_]] 
+            for handler in self.__handlers[event.eventType]:
+                handler(event)    
 
     #----------------------------------------------------------------------
     def __onTimer(self,tick):
         """向事件队列中存入计时器事件"""
         # 创建计时器事件
-        event = Event(type_=EVENT_TIMER)
+        event = Event(eventType=EVENT_TIMER)
         
         # 向队列中存入计时器事件
-        self.put(event) 
-        threading.Timer(tick,self.__onTimer,args=[tick]).start();
+        self.put(event)
+
+        # set a timer to add triggle the onTimer func again
+        threading.Timer(tick,self.__onTimer,args =[tick]).start();
 
     #----------------------------------------------------------------------
     def start(self):
@@ -120,25 +116,25 @@ class EventEngine:
         self.__thread.join()
             
     #----------------------------------------------------------------------
-    def register(self, type_, handler):
+    def register(self, eventType, handler):
         """注册事件处理函数监听"""
         # 尝试获取该事件类型对应的处理函数列表，若无则创建
         try:
-            handlerList = self.__handlers[type_]
+            handlerList = self.__handlers[eventType]
         except KeyError:
             handlerList = []
-            self.__handlers[type_] = handlerList
+            self.__handlers[eventType] = handlerList
         
         # 若要注册的处理器不在该事件的处理器列表中，则注册该事件
         if handler not in handlerList:
             handlerList.append(handler)
             
     #----------------------------------------------------------------------
-    def unregister(self, type_, handler):
+    def unregister(self, eventType, handler):
         """注销事件处理函数监听"""
         # 尝试获取该事件类型对应的处理函数列表，若无则忽略该次注销请求
         try:
-            handlerList = self.__handlers[type_]
+            handlerList = self.__handlers[eventType]
             
             # 如果该函数存在于列表中，则移除
             if handler in handlerList:
@@ -146,14 +142,19 @@ class EventEngine:
 
             # 如果函数列表为空，则从引擎中移除该事件类型
             if not handlerList:
-                del self.handlers[type_]
+                del self.handlers[eventType]
         except KeyError:
             pass     
-        
+
     #----------------------------------------------------------------------
     def put(self, event):
         """向事件队列中存入事件"""
         self.__queue.put(event)
+
+    #----------------------------------------------------------------------
+    def List_all_register_events(self):
+        """List all the register evnets"""
+        return self.__handlers.keys()
 
 
 ########################################################################
@@ -161,12 +162,13 @@ class Event:
     """事件对象"""
 
     #----------------------------------------------------------------------
-    def __init__(self, type_=None):
+    def __init__(self, eventType=None,eventData=None):
         """Constructor"""
-        self.type_ = type_      # 事件类型
-        self.dict_ = {}         # 字典用于保存具体的事件数据
+        self.eventType = eventType      # 事件类型
+        self.data = {}         # 字典用于保存具体的事件数据
 
-
+    def Add(key,value):
+        self.data[key] = value;
 #----------------------------------------------------------------------
 def test():
     """测试函数"""
@@ -174,13 +176,19 @@ def test():
     from datetime import datetime
     
     def simpletest(event):
+        event1 = Event(eventType="EVENT_TEST")
+        event1.data = {'data':100}
+        ee.put(event1)
         print('处理每秒触发的计时器事件：%s' % str(datetime.now()))
     
+    def simpleEEtest(event):
+        print(event.data)
     
     ee = EventEngine()
-    ee.register(EVENT_TIMER, simpletest)
+    #ee.register(EVENT_TIMER, simpletest)
+    #ee.register("EVENT_TEST",simpleEEtest)
     ee.start()
-    
+
 # 直接运行脚本可以进行测试
 if __name__ == '__main__':
     test()

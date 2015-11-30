@@ -121,7 +121,7 @@ class DemoMdApi(MdApi):
             log = u'行情服务器登出成功'
         else:
             log = u'登出回报，错误代码：' + unicode(error['ErrorID']) + u',' + u'错误信息：' + error['ErrorMsg'].decode('gbk')
-        
+         
         event.dict_['log'] = log
         self.__eventEngine.put(event)
         

@@ -10,18 +10,12 @@ class MyApp(object):
     def __init__(self):
         print('HI this is me')
         print('大家好这是我')
-        mp = MarketPrice()
-        mp.Get_history_price()
+        self.mp = MarketPrice()
+    
 
 def main():
     myapp = MyApp()
-
-    def simpletest(event):
-        print(u'处理每秒触发的计时器事件：%s' % str(datetime.now()))
-    
-    ee = EventEngine()
-    ee.register(EVENT_TIMER, simpletest)
-    ee.start()
+    myapp.mp.Subscibe_realtime_data("002740.SZ","rt_time,rt_latest")
 
 if __name__ == '__main__':
     main()
